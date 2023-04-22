@@ -10,6 +10,7 @@ class solvingAI:
         self.D = int(self.i * self.N)
         # Fraction of null connections
         self.k = 90
+        self.D = int(self.i * self.N)
 
         # Start with ReLu activation function
         self.activate = lambda x: np.maximum(0, x)
@@ -19,7 +20,7 @@ class solvingAI:
         self.T = 5  # total time, sec
 
         # Weight update parameters
-        self.lr = 0.01  # learning rate
+        self.lr = 0.05  # learning rate
         self.rho = 1  # target firing rate
 
     def initialize(self):
@@ -51,7 +52,7 @@ class solvingAI:
         return sparse_weight_matrix, rates_0
 
     def rate_eqns(self, y, w):
-        return -y + w @ self.activate(y)
+        return -y + 3*w @ self.activate(y + 10)
 
     def weight_update(self, weights, rates):
 
@@ -65,20 +66,21 @@ class solvingAI:
 
     def integrate(self, weights_0, rates_0):
         # Initialize
-        soln = np.zeros((self.n, self.h * self.T + 1))
-        soln[:, 0] = rates_0
+        soln = np.zeros((self.N, int(1/self.h * self.T) + 1))
+        soln[:, 0] = np.squeeze(rates_0, axis=1)
         weights = weights_0
-        weight_traj = np.zeros((len(self.IEcxns), self.T * self.h))
+        weight_traj = np.zeros((self.IEcxns.shape[0], int(self.T * 1/self.h)))
 
         for i in range(0, self.T):
-            soln[i + 1] = soln[i] + self.rate_eqns(soln[i], weights) * self.h
+            soln[:, i+1] = soln[:, i] + self.rate_eqns(soln[:, i], weights) * self.h
 
             # Save the nonzero IE weights before changing them
-            weight_traj[:, i] = weights[self.IEcxns]
+            # weight_traj[:, i] = weights[self.IEcxns]
             # Update the weights
-            weights = self.weight_update(weights, soln[i + 1])
+            if i % 10 == 0:
+                weights = self.weight_update(weights, soln[:, i+1])
 
-        return soln
+        return soln, weights
 
     def run_sim(self):
         weights_0, rates_0 = self.initialize()
