@@ -4,14 +4,15 @@ import numpy as np
 class solvingAI:
     def __init__(self):
         # Number of neurons
-        self.N = 1000
+        self.N = 100
         # Fraction of excitatory neurons
-        self.e = 0.8
+        self.i = 0.2
+        self.D = int(self.i * self.N)
         # Fraction of null connections
         self.k = 90
 
         # Start with ReLu activation function
-        self.activate = lambda x: max(0, x)
+        self.activate = lambda x: np.maximum(0, x)
 
         # Integration parameters
         self.h = 0.05  # step size, 1/s
@@ -25,7 +26,7 @@ class solvingAI:
         # Nischal
         N = self.N
         k = self.k
-        D = int(self.e * N)
+        D = int(self.i * N)
         w = np.random.rand(N, N)
 
         sparse_weight_matrix = np.random.rand(N, N)
@@ -35,15 +36,17 @@ class solvingAI:
         num_zero_elements = int((k / 100) * N * N)
         zero_indices = np.random.choice(N * N, num_zero_elements, replace=False)
         sparse_weight_matrix.flat[zero_indices] = 0
-
         non_zero_indices = np.transpose(np.nonzero(sparse_weight_matrix[: N - D, N - D :]))
-        non_zero_indices[:, 1] += N - D
+
+        # indices of connections w.r.t to the top right block
+        self.IEcxns = np.asarray(non_zero_indices)
+
+        # indices of connections w.r.t to the full weight matrix
+        self.full_idx = self.IEcxns.copy()
+        self.full_idx[:,1] += self.N - self.D
 
         # set the IE weights to zero
         sparse_weight_matrix[: N - D, N - D :] = 0
-
-        # get indices of non-zero elements that were originally in the top right block
-        self.IEcxns = non_zero_indices
 
         return sparse_weight_matrix, rates_0
 
@@ -51,11 +54,14 @@ class solvingAI:
         return -y + w @ self.activate(y)
 
     def weight_update(self, weights, rates):
-        # Nischal
-        rates_e = rates[:self.N - self.D]
-        rates_i = rates[self.N - self.D :]
-        updates = self.lr * (rates_e @ rates_i.T - self.rho * rates_e * np.ones((1, self.D)))
-        weights[self.IEcxns] += updates[self.IEcxns]
+
+        r_e= rates[:self.N - self.D]
+        r_i = rates[self.N - self.D :]
+
+        updates = self.lr * (r_e @ r_i.T - self.rho * r_e * np.ones((1, self.D)))
+        weights[self.full_idx[:,1], self.full_idx[:,1]] += updates[self.IEcxns[:,0],self.IEcxns[:,1]]
+
+        return weights
 
     def integrate(self, weights_0, rates_0):
         # Initialize
@@ -79,6 +85,3 @@ class solvingAI:
         soln, weights = self.integrate(weights_0, rates_0)
 
         return soln, weights
-
-ei= solvingAI()
-w, r = ei.initialize()
