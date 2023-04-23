@@ -24,11 +24,10 @@ class solvingAI:
         D = self.D
 
         # Initialize firing rates
-        rates_0 = np.random.rand(N, 1)/N
+        rates_0 = np.random.lognormal(1, 0.6, (N, 1))*2
 
         # make matrix sparse with 1-k fraction of connections
-        # sparse_weight_matrix = np.random.rand(N, N)
-        sparse_weight_matrix = np.random.lognormal(1, 0.6, (N, N))
+        sparse_weight_matrix = np.random.lognormal(0, 0.6, (N, N))
         num_zero_elements = int(self.k * N * N)
         zero_indices = np.random.choice(N * N, num_zero_elements, replace=False)
         sparse_weight_matrix.flat[zero_indices] = 0
@@ -46,7 +45,7 @@ class solvingAI:
         # set the IE weights to zero
         sparse_weight_matrix[: N - D, N - D :] = 0
 
-        return sparse_weight_matrix/((1 - self.k)*self.N), rates_0
+        return sparse_weight_matrix/(0.5*(1 - self.k)*self.N), rates_0
 
     def rate_eqns_old(self, y, w):
         sign = np.ones((self.N, self.N))
@@ -56,7 +55,7 @@ class solvingAI:
     def rate_eqns(self, y, w):
         h_e = y[: self.N - self.D]
         h_i = y[self.N - self.D :]
-        h_e = -h_e + w[: self.N - self.D, :self.N - self.D] @ self.activate(h_e) -  w[: self.N - self.D, self.N - self.D:] @ self.activate(h_i)
+        h_e = -h_e + w[: self.N - self.D, :self.N - self.D] @ self.activate(h_e) -  w[: self.N - self.D, self.N - self.D:] @ self.activate(h_i) + np.random.normal(5, 6)
         h_i = -h_i + w[self.N - self.D :, :self.N - self.D] @ self.activate(h_e) - w[self.N - self.D :, self.N - self.D:] @ self.activate(h_i) + 5
         return np.concatenate((h_e, 2*h_i))
 
@@ -89,16 +88,16 @@ class solvingAI:
             # Save the nonzero IE weights before changing them
             weight_traj[:, i] = weights[self.full_idx[:, 0], self.full_idx[:, 1]]
             # Update the weights
-            if i % 2 == 0:
+            if i % 1 == 0:
                 weights = self.weight_update(weights, soln[:, i + 1])
 
-        return soln, weight_traj
+        return soln, weight_traj, weights
 
     def run_sim(self):
         weights_0, rates_0 = self.initialize()
-        soln, weights = self.integrate(weights_0, rates_0)
+        soln, weights_traj, weights_final = self.integrate(weights_0, rates_0)
 
-        return soln, weights, weights_0
+        return soln, weights_traj, weights_0, weights_final
 
 
 if __name__ == "__main__":
