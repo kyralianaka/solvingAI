@@ -27,7 +27,8 @@ class solvingAI:
         rates_0 = np.random.rand(N, 1)/N
 
         # make matrix sparse with 1-k fraction of connections
-        sparse_weight_matrix = np.random.rand(N, N)
+        # sparse_weight_matrix = np.random.rand(N, N)
+        sparse_weight_matrix = np.random.lognormal(1, 0.6, (N, N))
         num_zero_elements = int(self.k * N * N)
         zero_indices = np.random.choice(N * N, num_zero_elements, replace=False)
         sparse_weight_matrix.flat[zero_indices] = 0
@@ -88,7 +89,7 @@ class solvingAI:
             # Save the nonzero IE weights before changing them
             weight_traj[:, i] = weights[self.full_idx[:, 0], self.full_idx[:, 1]]
             # Update the weights
-            if i % 10 == 0:
+            if i % 2 == 0:
                 weights = self.weight_update(weights, soln[:, i + 1])
 
         return soln, weight_traj
