@@ -2,7 +2,7 @@ import numpy as np
 
 
 class solvingAI:
-    
+
     def __init__(self):
         self.N = 500  # Number of neurons
         self.i = 0.1  # Fraction of inhitatory neurons
@@ -30,7 +30,7 @@ class solvingAI:
 
         # make matrix sparse with 1-k fraction of connections
         # sparse_weight_matrix = np.random.rand(N, N)
-        sparse_weight_matrix = np.random.lognormal(-1, 0.6, (N, N))
+        sparse_weight_matrix = np.random.lognormal(0, 0.6, (N, N))
         num_zero_elements = int(self.k * N * N)
         zero_indices = np.random.choice(N * N, num_zero_elements, replace=False)
         sparse_weight_matrix.flat[zero_indices] = 0
@@ -49,7 +49,7 @@ class solvingAI:
         sparse_weight_matrix[: N - D, N - D :] = 0
 
         return sparse_weight_matrix/((1 - self.k)*self.N), rates_0
-    
+
 
     def rate_eqns(self, y, w):
 
@@ -57,14 +57,14 @@ class solvingAI:
         h_i = y[self.N - self.D :] # inhibitory firing rates
 
         # Divide the weight matrix into the four parts
-        w_ee = w[:self.N-self.D, :self.N-self.D] 
-        w_ie = w[:self.N-self.D, self.N-self.D:] 
+        w_ee = w[:self.N-self.D, :self.N-self.D]
+        w_ie = w[:self.N-self.D, self.N-self.D:]
         w_ei = w[self.N-self.D:, :self.N-self.D]
         w_ii = w[self.N-self.D:, self.N-self.D:]
 
         # Calculate the firing rate derivatives
-        h_e = -h_e + w_ee @ self.activate(h_e) -  w_ie @ self.activate(h_i)
-        h_i = -h_i + w_ei @ self.activate(h_e) - w_ii @ self.activate(h_i)
+        h_e = -h_e + w_ee @ self.activate(h_e) -  w_ie @ self.activate(h_i) + np.random.normal(5, 6)
+        h_i = -h_i + w_ei @ self.activate(h_e) - w_ii @ self.activate(h_i) + 5
 
         return np.concatenate((h_e, 2*h_i))
 
