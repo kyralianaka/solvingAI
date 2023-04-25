@@ -4,7 +4,7 @@ import numpy as np
 class solvingAI:
 
     def __init__(self):
-        self.N = 500  # Number of neurons
+        self.N = 100  # Number of neurons
         self.i = 0.1  # Fraction of inhitatory neurons
         self.D = int(self.i * self.N)  # Number of inhibitory connections
         self.k = 0.4  # Fraction of null connections
